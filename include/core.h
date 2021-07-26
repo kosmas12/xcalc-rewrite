@@ -16,34 +16,19 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#ifndef XCALC_REWRITE_CORE_H
+#define XCALC_REWRITE_CORE_H
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include "include/core.h"
 
-int main() {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    TTF_Font *font;
+#define WIDTH 640
+#define HEIGHT 480
 
-    Init(&window, &renderer, &font);
+void InitSDL(SDL_Window **window, SDL_Renderer **renderer);
+void InitTTF(TTF_Font **font, SDL_Window **window, SDL_Renderer **renderer);
+void showBootupText(TTF_Font **font, SDL_Renderer **renderer);
+void Init(SDL_Window **window, SDL_Renderer **renderer, TTF_Font **font);
 
-    SDL_Event event;
 
-    bool exited = false;
-
-    while(!exited) {
-        while(SDL_PollEvent(&event)) {
-            if(event.type == SDL_QUIT) {
-                exited = true;
-            }
-        }
-    }
-
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    TTF_CloseFont(font);
-    TTF_Quit();
-    SDL_Quit();
-    return 0;
-}
+#endif //XCALC_REWRITE_CORE_H
