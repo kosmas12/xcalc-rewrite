@@ -3,7 +3,7 @@ project(xcalc-rewrite CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(${PROJECT_NAME} main.cpp include/core.cpp)
+add_executable(${PROJECT_NAME} main.cpp include/core.cpp include/thunderengine.cpp)
 
 INCLUDE(FindPkgConfig)
 
