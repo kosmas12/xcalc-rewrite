@@ -3,20 +3,19 @@
 //
 
 #include <vector>
-#include <iostream>
 #include "thunderengine.h"
 
 std::vector<struct OperationElement> ThunderEngine::convertMathExpressionStringToElements() {
     this->mathExpression.erase(std::remove(this->mathExpression.begin(), this->mathExpression.end(), ' '), this->mathExpression.end());
     unsigned long length = this->mathExpression.length();
-    std::vector<struct OperationElement> fullOperation;
+    std::vector<struct OperationElement> fullOperation(length);
     OperationElement currentElement {};
 
     for (unsigned long i = 0; i < length; ++i) {
         char currentChar = this->mathExpression[i];
         if (isdigit(currentChar)) {
             currentElement.type = ELEMENTTYPE_NUMBER;
-            currentElement.number = atoi(&currentChar);
+            currentElement.value.number = atoi(&currentChar);
         }
         else {
             switch (currentChar) {
@@ -26,18 +25,14 @@ std::vector<struct OperationElement> ThunderEngine::convertMathExpressionStringT
                 case '*':
                     break;
                 default:
-                    exit(2);
+                    this->errored = true;
+                    this->infoMessage = "Invalid character";
+                    break;
             }
             currentElement.type = ELEMENTTYPE_OPERATOR;
-            if (currentChar == '+' || currentChar == '-' || currentChar == '*' || currentChar == '/') {
-                currentElement.character = currentChar;
-            }
-            else {
-                std::cout << "Invalid character. Exiting..." << std::endl;
-                exit(1);
-            }
+            currentElement.value.character = currentChar;
         }
-        fullOperation.emplace_back(currentElement);
+        fullOperation[i] = currentElement;
     }
     
     return fullOperation;
@@ -45,11 +40,14 @@ std::vector<struct OperationElement> ThunderEngine::convertMathExpressionStringT
 
 ThunderEngine::ThunderEngine() {
     this->mathExpression = "";
+    this->infoMessage = "";
+    this->exit = false;
+    this->errored = false;
 }
 
-void ThunderEngine::concatenateNumbersToElement(OperationElement *dest, OperationElement *src) {
-    dest->number *= 10;
-    dest->number += src->number;
+void ThunderEngine::concatenateDigitToNumberElement(OperationElement *dest, OperationElement *src) {
+    dest->value.number *= 10;
+    dest->value.number += src->value.number;
 }
 
 double ThunderEngine::getNextNumber(std::vector <struct OperationElement> *operationToEvaluate) {
@@ -63,14 +61,14 @@ double ThunderEngine::getNextNumber(std::vector <struct OperationElement> *opera
         while (operation[j].type == ELEMENTTYPE_NUMBER && j < operation.size()) {
             ++numbersInElement;
             if (numbersInElement > 1) {
-                this->concatenateNumbersToElement(&(operation[0]), &(operation[j]));
+                this->concatenateDigitToNumberElement(&(operation[0]), &(operation[j]));
                 operation.erase(operation.begin() + j);
                 j = 0;
             }
             j++;
         }
     }
-    double number = operation[0].number;
+    double number = operation[0].value.number;
     return number;
 }
 
@@ -79,7 +77,7 @@ enum InterpretedOperator ThunderEngine::getNextOperator(std::vector<struct Opera
     std::vector <struct OperationElement> &operation = *operationToEvaluate;
 
     if (operation[0].type == ELEMENTTYPE_OPERATOR) {
-        switch (operation[0].character) {
+        switch (operation[0].value.character) {
             case '+':
                 return INTERPRETEDOPERATOR_ADDITION;
             case '-':
@@ -113,30 +111,50 @@ double ThunderEngine::evaluateOperation(std::vector <struct OperationElement> op
 
         switch (interpretedOperator) {
             case INTERPRETEDOPERATOR_ADDITION:
-                elementToInsert.number = firstNumber + secondNumber;
+                elementToInsert.value.number = firstNumber + secondNumber;
                 break;
             case INTERPRETEDOPERATOR_SUBTRACTION:
-                elementToInsert.number = firstNumber - secondNumber;
+                elementToInsert.value.number = firstNumber - secondNumber;
                 break;
             case INTERPRETEDOPERATOR_MULTIPLICATION:
-                elementToInsert.number = firstNumber * secondNumber;
+                elementToInsert.value.number = firstNumber * secondNumber;
                 break;
             case INTERPRETEDOPERATOR_DIVISION:
-                elementToInsert.number = firstNumber / secondNumber;
+                elementToInsert.value.number = firstNumber / secondNumber;
                 break;
             case INTERPRETEDOPERATOR_PARENTHESESOPEN:
             case INTERPRETEDOPERATOR_PARENTHESESCLOSE:
                 break;
             case INTERPRETEDOPERATOR_INVALID:
-                exit(3);
+                this->errored = true;
+                this->infoMessage = "Invalid or unsupported operator provided";
         }
         operationToEvaluate.insert(operationToEvaluate.begin(), elementToInsert);
     }
 
-    return operationToEvaluate[0].number;
+    return operationToEvaluate[0].value.number;
 }
 
 double ThunderEngine::evaluateMathExpression() {
+    // Perform some basic sanity checks
+    if (this->mathExpression.length() < 3) {
+        this->errored = true;
+        this->infoMessage = "Invalid mathematical expression provided (Too short)";
+        return 0;
+    }
+
     std::vector<struct OperationElement> operationToEvaluate = this->convertMathExpressionStringToElements();
     return this->evaluateOperation(operationToEvaluate);
+}
+
+bool ThunderEngine::shouldExit() {
+    return this->exit;
+}
+
+std::string ThunderEngine::getInfoMessage() {
+    return this->infoMessage;
+}
+
+bool ThunderEngine::hasErrored() {
+    return this->errored;
 }

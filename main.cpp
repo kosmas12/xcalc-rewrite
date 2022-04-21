@@ -35,7 +35,17 @@ int main() {
 */
 
     ThunderEngine thunderEngine;
-    getline(std::cin, thunderEngine.mathExpression);
-    std::cout << thunderEngine.evaluateMathExpression() << std::endl;
+    while (!thunderEngine.shouldExit()) {
+        std::cout << "Enter a mathematical expression: ";
+        std::cout.flush();
+        getline(std::cin, thunderEngine.mathExpression);
+        double result = thunderEngine.evaluateMathExpression();
+        if (thunderEngine.hasErrored()) {
+            std::cout << thunderEngine.getInfoMessage() << std::endl;
+        }
+        else {
+            std::cout << result << std::endl;
+        }
+    }
 
 }
